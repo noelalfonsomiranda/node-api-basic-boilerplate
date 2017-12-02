@@ -1,0 +1,58 @@
+const request = require('supertest')
+// const app = require('../../app')
+const Users = require('../../src/models').User
+const jwt = require('jsonwebtoken')
+
+describe('Users route', () => {
+  let token
+  let mockUser
+  const jwtSecret = process.env.JWT_SECRET
+
+  beforeEach(done => {
+    Users
+      .destroy({where: {}})
+      .then(() => Users.create({
+        firstName: 'Noel Alfonso',
+        lastName: 'Miranda',
+        email: 'noelalfonsomiranda@gmail.com',
+        password: 'pass'
+      }))
+      .then(user => {
+        mockUser = user
+        token = jwt.encode({id: user.id}, jwtSecret)
+        done()
+      })
+      .then(() => Users.create({
+        firstName: 'Krystal Mauree',
+        lastName: 'Galang',
+        email: 'krystalmaureen@email.com',
+        password: 'pass'
+      }))
+  })
+  describe('GET /api/users', () => {
+    describe('status 200', () => {
+      it('returns a list of users', done => {
+        request.get('/users')
+          .set('Authorization', `JWT ${token}`)
+          .expect(200)
+          .end((err, res) => {
+            expect(res.body.data).to.have.length(2)
+            done(err)
+          })
+      })
+    })
+  })
+  describe('DELETE /api/users/:userId', () => {
+    describe('status 204', () => {
+      it('deletes a user', done => {
+        request.delete(`/users/${mockUser.id}`)
+          .send({
+            countries: [1]
+          })
+          .set('Authorization', `JWT ${token}`)
+          .expect(200)
+          .end((err, res) => done(err))
+      })
+    })
+  })
+})

@@ -1,0 +1,8 @@
+parameters:
+  email:
+    name: email
+    description: User's email.
+    in: formData
+    format: json
+    required: true
+    type: string
