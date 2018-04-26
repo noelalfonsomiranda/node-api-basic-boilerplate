@@ -4,7 +4,7 @@ const dotenv = require('dotenv')
 dotenv.config()
 
 const development = {
-  use_env_variable: process.env.DATABASE_URL,
+  // use_env_variable: process.env.DATABASE_URL,
   database: process.env.DB_NAME,
   username: process.env.DB_USER,
   password: process.env.DB_PASS,
