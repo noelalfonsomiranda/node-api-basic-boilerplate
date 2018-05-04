@@ -21,7 +21,7 @@ module.exports = {
         allowNull: false,
         unique: true,
         validate: {
-          isEmail: true,
+          isEmail: true
         }
       },
       password: {
