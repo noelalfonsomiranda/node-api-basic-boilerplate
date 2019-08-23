@@ -21,11 +21,17 @@ module.exports = {
         allowNull: false,
         unique: true,
         validate: {
-          isEmail: true
+          isEmail: { msg: 'Invalid email.' },
+          isNotNull: { msg: 'The email is required' }
         }
       },
       password: {
         type: Sequelize.STRING,
+        allowNull: false
+      },
+      role: {
+        type: Sequelize.STRING,
+        defaultValue: 'member',
         allowNull: false
       },
       createdAt: {
