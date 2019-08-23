@@ -12,6 +12,7 @@ const dotenv = require('dotenv')
 dotenv.config()
 
 const auth = require('./src/services/passport.service')()
+const errorHandler = require('./src/services/errorHandler.service')
 
 const app = express()
 
@@ -56,14 +57,15 @@ app.use((req, res, next) => {
 })
 
 // error handler
-app.use((err, req, res) => {
-  // set locals, only providing error in development
-  res.locals.message = err.message
-  res.locals.error = req.app.get('env') === 'development' ? err : {}
+// app.use((err, req, res) => {
+//   // set locals, only providing error in development
+//   res.locals.message = err.message
+//   res.locals.error = req.app.get('env') === 'development' ? err : {}
 
-  // render the error page
-  res.status(err.status || 500)
-  res.render('error')
-})
+//   // render the error page
+//   res.status(err.status || 500)
+//   res.render('error')
+// })
+app.use(errorHandler)
 
 module.exports = app
