@@ -3,7 +3,7 @@ const { hash, comparePassword } = require('../services/bcrypt.service')
 const authService = require('../services/auth.service')
 
 module.exports = {
-  create (req, res) {
+  create (req, res, next) {
     let encryptPassword = hash(req.body.password)
 
     if (req.body.password) {
@@ -19,9 +19,7 @@ module.exports = {
 
           res.status(201).json({token, user})
         })
-        .catch(error => {
-          res.status(400).json(error)
-        })
+        .catch(error => next(error))
     }
 
     return res.status(400).json({message: 'There\'s something wrong in password.'})
