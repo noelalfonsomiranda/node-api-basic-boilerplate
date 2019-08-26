@@ -16,7 +16,7 @@ const opts = {
 
 module.exports = () => {
   const strategy = new JwtStrategy(opts, (jwtPayload, done) => {
-    User.findById(jwtPayload.id)
+    User.findByPk(jwtPayload.id)
     .then((user) => done(null, user))
     .catch((err) => done(err, null))
   })

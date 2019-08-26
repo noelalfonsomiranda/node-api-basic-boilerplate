@@ -61,6 +61,8 @@ module.exports = (app) => {
    */
   app.post('/signup', usersController.create)
 
+  app.post('/verify-email', usersController.verifyEmail)
+
   /********************
   LOGIN
   *********************/

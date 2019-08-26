@@ -1,51 +1,130 @@
-const User = require('../models').User
+const { User } = require('../models')
 const { hash, comparePassword } = require('../services/bcrypt.service')
 const authService = require('../services/auth.service')
+const { issue, verify } = require('../services/auth.service')
+const { sendMail } = require('../services/email.service')
+const { generateCode } = require('../services/randomString.service')
 
 module.exports = {
-  create (req, res, next) {
-    let encryptPassword = hash(req.body.password)
+  async create (req, res, next) {
+    try {
+      const {
+        firstName,
+        lastName,
+        email,
+        password
+      } = req.body
 
-    if (req.body.password) {
-      return User
-        .create({
-          firstName: req.body.firstName,
-          lastName: req.body.lastName,
-          email: req.body.email,
-          password: encryptPassword
-        })
-        .then(user => {
-          const token = authService.issue({id: user.id})
+      const userChecker = await User.findOne({
+        where: {
+          email
+        }
+      })
 
-          res.status(201).json({token, user})
-        })
-        .catch(error => next(error))
+      if (userChecker) {
+        throw `Email already taken`
+      }
+
+      const encryptPassword = hash(password)
+      const inviteCode = generateCode()
+
+      if (password) {
+        return User
+          .create({
+            firstName,
+            lastName,
+            email,
+            password: encryptPassword,
+            inviteCode
+          })
+          .then(async () => {
+            try {
+              const verificationToken = issue({
+                payload: {
+                  email
+                }
+              })
+
+              const data = {
+                from: 'hello@test.com',
+                to: email,
+                subject: 'Email Verification',
+                text: `
+                Here's the link to verify your account.
+                ${process.env.APP_BASE_URL}/verify-email?_a=${verificationToken}
+                `
+              }
+
+              await sendMail(data)
+
+              return res.status(200).json({
+                success: true,
+                message: 'Successfully registered user'
+              })
+            } catch (error) {
+              return next(error)
+            }
+          })
+          .catch(error => next(error))
+      }
+    } catch (err) {
+      return next(err)
     }
-
-    return res.status(400).json({message: 'There\'s something wrong in password.'})
   },
+
+  async verifyEmail(req, res, next) {
+    try {
+      const { email } = verify(req.body.token)
+
+      const user = await User.findOne({
+        where: {
+          email
+        }
+      })
+
+      if(user.emailVerified) {
+        throw `User already verified`
+      }
+
+      user.emailVerified = true
+
+      await user.save()
+
+      return res.status(200).json({
+        success: true,
+        message: 'Email successfully verified'
+      })
+    } catch (err) {
+      return next(err)
+    }
+  },
+
   list (req, res) {
     return User
-      .all()
+      .findAll()
       .then(users => res.status(200).json(users))
       .catch(error => res.status(400).json(error))
   },
-  retrieve (req, res) {
+
+  retrieve (req, res, next) {
     return User
-      .findById(req.params.userId)
+      .findByPk(req.params.userId)
       .then(user => {
         if (!user) {
-          return res.status(404).json({
-            message: 'User Not Found'
-          })
+          throw `User not found`
         }
-        return res.status(200).json(user)
+        return res.status(200).json({
+          success: true,
+          message: 'Successfully retrieve one user',
+          data: user
+        })
       })
-      .catch(error => res.status(400).json(error))
+      .catch(error => next(error))
   },
+
   update (req, res) {
     return User
-      .findById(req.params.userId)
+      .findByPk(req.params.userId)
       .then(user => {
         if (!user) {
           return res.status(404).json({
@@ -64,9 +143,10 @@ module.exports = {
       })
       .catch((error) => res.status(400).json(error))
   },
+
   destroy (req, res) {
     return User
-      .findById(req.params.userId)
+      .findByPk(req.params.userId)
       .then(user => {
         if (!user) {
           return res.status(400).json({
@@ -80,40 +160,65 @@ module.exports = {
       })
       .catch(error => res.status(400).json(error))
   },
-  login (req, res) {
-    const email = req.body.email
-    const password = req.body.password
-    if (email && password) {
-      User.findOne({
-        where: {
-          email: email
-        }
-      })
-      .then(user => {
-        if (!user) {
-          return res.status(400).json({message: 'Bad Request: User not found'})
-        }
-        if (comparePassword(password, user.password)) {
-          const token = authService.issue({id: user.id})
 
-          return res.status(200).json({token, user})
+  async login (req, res, next) {
+    try {
+      const { email, password } = req.body
+      const userObj = await User.findOne({
+        where: {
+          email,
+          emailVerified: true
+        },
+        raw: true
+      })
+
+      if (userObj && comparePassword(password, userObj.password)) {
+        const {
+          firstName,
+          lastName,
+          emailVerified,
+          role,
+          id
+        } = userObj
+
+        const payload = {
+          firstName,
+          lastName,
+          emailVerified,
+          role,
+          id
         }
-        return res.status(401).json({message: 'Unauthorized'})
-      })
-      .catch((err) => {
-        console.log(err)
-        return res.status(500).json({message: 'Internal server error'})
-      })
+
+        const token = issue({
+          payload,
+          expiration: '12h'
+        })
+
+        return res.status(200).json({
+          success: true,
+          message: 'Successfully login',
+          token,
+          data: payload
+        })
+      }
+
+      throw `Invalid Username or Password`
+    } catch (error) {
+      return next(error)
     }
   },
-  validate (req, res) {
-    const tokenToVerify = req.body.token
-    authService
-      .verify(tokenToVerify, err => {
-        if (err) {
-          return res.status(401).json({ isvalid: false, err: 'Invalid Token!' })
-        }
-        return res.status(200).json({ isvalid: true })
+
+  validate (req, res, next) {
+    try {
+      const { token } = req.body
+      const verifyToken = verify(token)
+      return res.status(200).json({
+        success: true,
+        message: 'Successfully verified',
+        data: verifyToken
       })
+    } catch (error) {
+      return next(error)
+    }
   }
 }

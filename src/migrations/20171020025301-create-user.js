@@ -21,8 +21,7 @@ module.exports = {
         allowNull: false,
         unique: true,
         validate: {
-          isEmail: { msg: 'Invalid email.' },
-          isNotNull: { msg: 'The email is required' }
+          isEmail: true
         }
       },
       password: {
@@ -33,6 +32,10 @@ module.exports = {
         type: Sequelize.STRING,
         defaultValue: 'member',
         allowNull: false
+      },
+      emailVerified: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false
       },
       createdAt: {
         allowNull: false,

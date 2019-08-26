@@ -11,6 +11,7 @@ module.exports = {
       firstName: 'Admin',
       lastName: 'Test',
       role: 'super_admin',
+      emailVerified: true,
       createdAt: new Date(),
       updatedAt: new Date()
     }], {})

@@ -27,7 +27,7 @@ module.exports = {
   },
   retrieve(req, res) {
     return User
-      .findById(req.params.userId)
+      .findByPk(req.params.userId)
       .then(user => {
         if (!user) {
           return res.status(404).json({
@@ -40,7 +40,7 @@ module.exports = {
   },
   update(req, res) {
     return User
-      .findById(req.params.userId)
+      .findByPk(req.params.userId)
       .then(user => {
         if (!user) {
           return res.status(404).json({
@@ -61,7 +61,7 @@ module.exports = {
   },
   destroy(req, res) {
     return User
-      .findById(req.params.userId)
+      .findByPk(req.params.userId)
       .then(user => {
         if (!user) {
           return res.status(400).json({
