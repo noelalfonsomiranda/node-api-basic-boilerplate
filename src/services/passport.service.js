@@ -28,6 +28,13 @@ module.exports = () => {
 
   return {
     initialize: () => passport.initialize(),
-    authenticate: () => passport.authenticate('jwt', {session: false})
+    authenticate: () => passport.authenticate('jwt', {session: false}),
+    restrict: (req, res, next) => {
+      if (req.user.role === 'admin' || req.user.role === 'super_admin') {
+        return next()
+      }
+
+      throw 'Unauthorized, strictly for admin users only.'
+    }
   }
 }

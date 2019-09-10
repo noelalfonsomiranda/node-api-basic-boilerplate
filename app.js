@@ -22,9 +22,9 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: false }))
 app.use(bodyParser.json({limit: '50mb'}))
 app.use(cookieParser())
 app.use(cors({
-  origin: [
-    'http://localhost:8080'
-  ],
+  // origin: [
+  //   'http://localhost:8080'
+  // ],
   methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['DNT', 'X-CustomHeader', 'Keep-Alive', 'User-Agent', 'X-Requested-With', 'If-Modified-Since', 'Cache-Control', 'Content-Type', 'Content-Range', 'Range', 'Authorization'],
   credentials: true,
@@ -36,6 +36,7 @@ app.use(passport.session())
 app.use(express.static(path.join(__dirname, 'public')))
 
 app.use('/api/*', auth.authenticate())
+app.use('/api/admin/*', auth.restrict)
 
 require('./src/routes')(app)
 
