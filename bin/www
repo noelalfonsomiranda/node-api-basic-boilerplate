@@ -5,7 +5,7 @@ const normalizePort = require('normalize-port');
 
 const app = require('../app');
 
-const port = normalizePort(process.env.PORT, 10) || 8080;
+const port = normalizePort(process.env.PORT, 10) || 5000;
 app.set('port', port);
 
 // Event listener for HTTP server "error" event.
